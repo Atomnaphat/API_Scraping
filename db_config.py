@@ -43,7 +43,7 @@ def check_ttl_index():
 
 def setup_ttl_index():
     """
-    ตั้งค่า TTL index สำหรับลบข้อมูลอัตโนมัติหลัง 1 นาที (สำหรับทดสอบ)
+    ตั้งค่า TTL index สำหรับลบข้อมูลอัตโนมัติหลัง 3 เดือน
     """
     try:
         db = get_database()
@@ -60,13 +60,13 @@ def setup_ttl_index():
                 collection.drop_index(index_info['name'])
                 print(f"✅ Dropped index: {index_info['name']}")
 
-        # สร้าง TTL index ใหม่
+        # สร้าง TTL index ใหม่ (7776000 วินาที = 90 วัน = 3 เดือน)
         collection.create_index(
             [("timestamp", 1)],
-            expireAfterSeconds=60,
+            expireAfterSeconds=7776000,  # 3 months in seconds
             name="timestamp_ttl_index"
         )
-        print("✅ Created new TTL index on 'timestamp' field")
+        print("✅ Created new TTL index on 'timestamp' field (3 months expiration)")
         
         # ตรวจสอบ index ที่สร้าง
         check_ttl_index()

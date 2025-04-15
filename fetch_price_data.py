@@ -53,7 +53,7 @@ def fetch_and_store_data():
         if store_price_data(documents):
             print(f"✅ Stored {len(documents)} documents in MongoDB")
             # แสดงเวลาที่จะลบในเวลาประเทศไทย
-            deletion_time_utc = timestamp_now + timedelta(seconds=60)
+            deletion_time_utc = timestamp_now + timedelta(days=90)  # 3 months = 90 days
             deletion_time_th = deletion_time_utc + timedelta(hours=7)
             print(f"⏰ Documents will be automatically deleted at: {deletion_time_th.strftime('%Y-%m-%d %H:%M:%S')} (Thailand time)")
             print(f"📌 Current UTC time: {timestamp_now.strftime('%Y-%m-%d %H:%M:%S')} UTC")
