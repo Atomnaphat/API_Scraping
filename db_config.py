@@ -1,6 +1,7 @@
-from pymongo import MongoClient
+from pymongo import MongoClient, IndexModel
 from dotenv import load_dotenv
 import os
+from datetime import datetime, timedelta
 
 # โหลดค่าจาก .env
 load_dotenv()
@@ -20,6 +21,59 @@ def get_database():
     except Exception as e:
         print(f"❌ Error connecting to MongoDB: {e}")
         return None
+
+def check_ttl_index():
+    """
+    ตรวจสอบ TTL index ที่มีอยู่
+    """
+    try:
+        db = get_database()
+        if db is None:
+            return False
+
+        collection = db['price_data']
+        indexes = list(collection.list_indexes())
+        print("\nCurrent indexes:")
+        for index in indexes:
+            print(f"Index: {dict(index)}")
+        return True
+    except Exception as e:
+        print(f"❌ Error checking TTL index: {e}")
+        return False
+
+def setup_ttl_index():
+    """
+    ตั้งค่า TTL index สำหรับลบข้อมูลอัตโนมัติหลัง 1 นาที (สำหรับทดสอบ)
+    """
+    try:
+        db = get_database()
+        if db is None:
+            return False
+
+        collection = db['price_data']
+        
+        # Drop all existing indexes except _id
+        indexes = list(collection.list_indexes())
+        for index in indexes:
+            index_info = dict(index)
+            if index_info['name'] != '_id_':
+                collection.drop_index(index_info['name'])
+                print(f"✅ Dropped index: {index_info['name']}")
+
+        # สร้าง TTL index ใหม่
+        collection.create_index(
+            [("timestamp", 1)],
+            expireAfterSeconds=60,
+            name="timestamp_ttl_index"
+        )
+        print("✅ Created new TTL index on 'timestamp' field")
+        
+        # ตรวจสอบ index ที่สร้าง
+        check_ttl_index()
+        return True
+    except Exception as e:
+        print(f"❌ Error setting up TTL index: {e}")
+        return False
 
 def store_price_data(data):
     """
@@ -44,3 +98,6 @@ def store_price_data(data):
     except Exception as e:
         print(f"❌ Error storing data in MongoDB: {e}")
         return False
+
+# ตั้งค่า TTL index เมื่อ import module
+setup_ttl_index()
