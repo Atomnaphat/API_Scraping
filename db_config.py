@@ -1,14 +1,13 @@
-from pymongo import MongoClient, IndexModel
+from pymongo import MongoClient
 from dotenv import load_dotenv
 import os
-from datetime import datetime, timedelta
 
 # โหลดค่าจาก .env
 load_dotenv()
 
 # ดึงค่า URI และ DB name จาก environment
 MONGO_URI = os.getenv('MONGO_URI', 'mongodb://localhost:27017')
-DB_NAME = os.getenv('DB_NAME', 'price_data_db')
+DB_NAME = os.getenv('DB_NAME', 'API_price_data')
 
 def get_database():
     """
@@ -21,59 +20,6 @@ def get_database():
     except Exception as e:
         print(f"❌ Error connecting to MongoDB: {e}")
         return None
-
-def check_ttl_index():
-    """
-    ตรวจสอบ TTL index ที่มีอยู่
-    """
-    try:
-        db = get_database()
-        if db is None:
-            return False
-
-        collection = db['price_data']
-        indexes = list(collection.list_indexes())
-        print("\nCurrent indexes:")
-        for index in indexes:
-            print(f"Index: {dict(index)}")
-        return True
-    except Exception as e:
-        print(f"❌ Error checking TTL index: {e}")
-        return False
-
-def setup_ttl_index():
-    """
-    ตั้งค่า TTL index สำหรับลบข้อมูลอัตโนมัติหลัง 3 เดือน
-    """
-    try:
-        db = get_database()
-        if db is None:
-            return False
-
-        collection = db['price_data']
-        
-        # Drop all existing indexes except _id
-        indexes = list(collection.list_indexes())
-        for index in indexes:
-            index_info = dict(index)
-            if index_info['name'] != '_id_':
-                collection.drop_index(index_info['name'])
-                print(f"✅ Dropped index: {index_info['name']}")
-
-        # สร้าง TTL index ใหม่ (7776000 วินาที = 90 วัน = 3 เดือน)
-        collection.create_index(
-            [("timestamp", 1)],
-            expireAfterSeconds=7776000,  # 3 months in seconds
-            name="timestamp_ttl_index"
-        )
-        print("✅ Created new TTL index on 'timestamp' field (3 months expiration)")
-        
-        # ตรวจสอบ index ที่สร้าง
-        check_ttl_index()
-        return True
-    except Exception as e:
-        print(f"❌ Error setting up TTL index: {e}")
-        return False
 
 def store_price_data(data):
     """
@@ -98,6 +44,3 @@ def store_price_data(data):
     except Exception as e:
         print(f"❌ Error storing data in MongoDB: {e}")
         return False
-
-# ตั้งค่า TTL index เมื่อ import module
-setup_ttl_index()

@@ -1,16 +1,7 @@
 import requests
-from datetime import datetime, timedelta
-import db_config  # Import the entire module to ensure TTL index is initialized
+from datetime import datetime, timedelta, timezone
+import db_config  # Import the entire module
 from db_config import store_price_data
-import time
-from datetime import timezone
-
-def get_thailand_time():
-    """
-    สร้างเวลาปัจจุบันในโซนเวลาของประเทศไทย (UTC+7)
-    """
-    utc_now = datetime.utcnow()  # Use UTC time for MongoDB
-    return utc_now
 
 def fetch_and_store_data():
     url = "https://index-api.tpso.go.th/api/cmip/filter"
@@ -41,25 +32,21 @@ def fetch_and_store_data():
         print("✅ Success! Fetching data...")
         response_data = response.json()
 
-        # เตรียมข้อมูลเป็นรายการแยก ๆ
-        timestamp_now = get_thailand_time()  # ใช้เวลา UTC สำหรับ MongoDB
+        # แปลงเวลาไทย (UTC+7)
+        thailand_time = datetime.now(timezone(timedelta(hours=7)))
+
         documents = [{
             "item": item,
-            "timestamp": timestamp_now,  # Store as UTC
+            "timestamp": thailand_time,  # เวลาไทย
             "request_parameters": data
         } for item in response_data]
 
         # เก็บข้อมูลลง MongoDB
         if store_price_data(documents):
             print(f"✅ Stored {len(documents)} documents in MongoDB")
-            # แสดงเวลาที่จะลบในเวลาประเทศไทย
-            deletion_time_utc = timestamp_now + timedelta(days=90)  # 3 months = 90 days
-            deletion_time_th = deletion_time_utc + timedelta(hours=7)
-            print(f"⏰ Documents will be automatically deleted at: {deletion_time_th.strftime('%Y-%m-%d %H:%M:%S')} (Thailand time)")
-            print(f"📌 Current UTC time: {timestamp_now.strftime('%Y-%m-%d %H:%M:%S')} UTC")
+            print(f"📌 Current Thailand time: {thailand_time.strftime('%Y-%m-%d %H:%M:%S')} TH")
         else:
             print("❌ Failed to store data in MongoDB")
-
     else:
         print(f"❌ Request failed with status {response.status_code}")
         print(f"Response Text: {response.text}")
