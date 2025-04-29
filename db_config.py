@@ -37,7 +37,7 @@ def store_price_data(data, use_timestamp=True):
         thailand_time = datetime.now(timezone(timedelta(hours=7)))
 
         if use_timestamp:
-            collection_name = thailand_time.strftime("TPSO_Data_%d-%m-%Y_%H-%M-%S")
+            collection_name = thailand_time.strftime("TPSO_Data_%d-%m-%Y_%H-%M")
         else:
             collection_name = thailand_time.strftime("TPSO_Data_%d-%m-%Y")
 
